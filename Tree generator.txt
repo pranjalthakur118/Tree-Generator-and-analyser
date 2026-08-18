@@ -1,0 +1,164 @@
+#include <iostream>
+#include <stack>
+#include <string>
+#include <cctype>
+using namespace std;
+
+struct Node{
+    char data;
+    Node* left;
+    Node* right;
+
+    Node(char value){
+        data=value;
+        left=nullptr;
+        right=nullptr;
+    }
+};
+
+bool isOperator(char c){
+    return c=='+'||c=='-'||c=='*'||c=='/';
+}
+
+int precedence(char c){
+    if(c=='+'||c=='-')
+        return 1;
+    if(c=='*'||c=='/')
+        return 2;
+    return 0;
+}
+
+string infixToPostfix(string infix){
+    stack<char> st;
+    string postfix;
+
+    for(char c:infix){
+        if(c==' ')
+            continue;
+
+        if(isdigit(c)){
+            postfix+=c;
+        }
+        else if(c=='('){
+            st.push(c);
+        }
+        else if(c==')'){
+            while(!st.empty()&&st.top()!='('){
+                postfix+=st.top();
+                st.pop();
+            }
+            if(!st.empty())
+                st.pop();
+        }
+        else if(isOperator(c)){
+            while(!st.empty()&&st.top()!='('&&
+                  precedence(st.top())>=precedence(c)){
+                postfix+=st.top();
+                st.pop();
+            }
+            st.push(c);
+        }
+    }
+
+    while(!st.empty()){
+        postfix+=st.top();
+        st.pop();
+    }
+
+    return postfix;
+}
+
+Node* buildTree(string postfix){
+    stack<Node*> st;
+
+    for(char c:postfix){
+        if(isdigit(c)){
+            st.push(new Node(c));
+        }
+        else if(isOperator(c)){
+            Node* right=st.top();
+            st.pop();
+
+            Node* left=st.top();
+            st.pop();
+
+            Node* temp=new Node(c);
+            temp->left=left;
+            temp->right=right;
+
+            st.push(temp);
+        }
+    }
+
+    return st.top();
+}
+
+void inorder(Node* root){
+    if(root==nullptr)
+        return;
+
+    inorder(root->left);
+    cout<<root->data<<" ";
+    inorder(root->right);
+}
+
+void preorder(Node* root){
+    if(root==nullptr)
+        return;
+
+    cout<<root->data<<" ";
+    preorder(root->left);
+    preorder(root->right);
+}
+
+void postorder(Node* root){
+    if(root==nullptr)
+        return;
+
+    postorder(root->left);
+    postorder(root->right);
+    cout<<root->data<<" ";
+}
+
+double evaluate(Node* root){
+    if(root->left==nullptr&&root->right==nullptr)
+        return root->data-'0';
+
+    double left=evaluate(root->left);
+    double right=evaluate(root->right);
+
+    switch(root->data){
+        case '+':return left+right;
+        case '-':return left-right;
+        case '*':return left*right;
+        case '/':return left/right;
+    }
+
+    return 0;
+}
+
+int main(){
+    string expression;
+
+    cout<<"Enter expression:";
+    cin>>expression;
+
+    string postfix=infixToPostfix(expression);
+
+    cout<<"\nPostfix:"<<postfix;
+
+    Node* root=buildTree(postfix);
+
+    cout<<"\nInorder:";
+    inorder(root);
+
+    cout<<"\nPreorder:";
+    preorder(root);
+
+    cout<<"\nPostorder:";
+    postorder(root);
+
+    cout<<"\nResult:"<<evaluate(root);
+
+    return 0;
+}
